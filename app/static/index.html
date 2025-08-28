@@ -7,48 +7,77 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <header>
-    <h1>AI Personal Assistant</h1>
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="logo">🧭</div>
+        <div class="brand-text">
+          <h1>Assistant</h1>
+          <span class="sub">Chat • Todos • Reminders</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="theme-toggle" class="btn ghost" aria-label="Toggle theme">🌗</button>
+      </div>
+    </div>
   </header>
 
-  <main>
-    <section id="chat">
-      <h2>Chat</h2>
-      <div id="chat-log"></div>
-      <form id="chat-form">
-        <input id="chat-input" type="text" placeholder="Type your message..." required />
-        <button type="submit">Send</button>
+  <main class="container layout">
+    <section id="chat" class="card card-lg">
+      <div class="card-header">
+        <h2>Chat</h2>
+      </div>
+      <div id="chat-log" class="chat-log"></div>
+      <div id="chat-typing" class="typing hidden"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <form id="chat-form" class="toolbar">
+        <input id="chat-input" type="text" placeholder="Ask me anything..." autocomplete="off" required />
+        <button type="submit" class="btn primary">Send</button>
       </form>
     </section>
 
-    <section id="todos">
-      <h2>Todos</h2>
-      <form id="todo-form">
-        <input id="todo-title" type="text" placeholder="Add a todo..." required />
-        <input id="todo-due" type="datetime-local" />
-        <button type="submit">Add</button>
-      </form>
-      <ul id="todo-list"></ul>
-    </section>
+    <aside class="sidebar">
+      <section id="todos" class="card">
+        <div class="card-header">
+          <h2>Todos</h2>
+        </div>
+        <form id="todo-form" class="toolbar">
+          <input id="todo-title" type="text" placeholder="Add a todo..." required />
+          <input id="todo-due" type="datetime-local" />
+          <button type="submit" class="btn">Add</button>
+        </form>
+        <div id="todo-empty" class="empty hidden">No todos yet. Add your first task.</div>
+        <ul id="todo-list"></ul>
+      </section>
 
-    <section id="reminders">
-      <h2>Reminders</h2>
-      <form id="reminder-form">
-        <input id="reminder-text" type="text" placeholder="Reminder text..." required />
-        <input id="reminder-due" type="datetime-local" required />
-        <button type="submit">Schedule</button>
-      </form>
-      <ul id="reminder-list"></ul>
-    </section>
+      <section id="reminders" class="card">
+        <div class="card-header">
+          <h2>Reminders</h2>
+        </div>
+        <form id="reminder-form" class="toolbar">
+          <input id="reminder-text" type="text" placeholder="Reminder text..." required />
+          <input id="reminder-due" type="datetime-local" required />
+          <button type="submit" class="btn">Schedule</button>
+        </form>
+        <div id="reminder-empty" class="empty hidden">No reminders scheduled.</div>
+        <ul id="reminder-list"></ul>
+      </section>
 
-    <section id="notifications">
-      <h2>Notifications</h2>
-      <ul id="notification-list"></ul>
-    </section>
+      <section id="notifications" class="card">
+        <div class="card-header">
+          <h2>Notifications</h2>
+        </div>
+        <div id="notification-empty" class="empty hidden">Notifications appear here when reminders fire.</div>
+        <ul id="notification-list"></ul>
+      </section>
+    </aside>
   </main>
 
-  <footer>
-    <small>Optional: set OPENAI_API_KEY env var for real LLM replies.</small>
+  <div id="toast-container" class="toasts" aria-live="polite" aria-atomic="true"></div>
+
+  <footer class="app-footer">
+    <div class="container">
+      <small>Tip: set <code>OPENAI_API_KEY</code> for live AI replies.</small>
+    </div>
   </footer>
 
   <script src="/app.js"></script>

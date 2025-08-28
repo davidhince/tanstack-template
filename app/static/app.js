@@ -5,11 +5,42 @@ const api = {
   notifications: '/api/notifications',
 };
 
+// Theme toggle
+const themeToggle = document.getElementById('theme-toggle');
+const root = document.documentElement;
+function applyTheme(theme) {
+  if (theme === 'light') root.setAttribute('data-theme', 'light');
+  else root.removeAttribute('data-theme');
+}
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  applyTheme(saved);
+}
+function toggleTheme() {
+  const current = root.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  localStorage.setItem('theme', next);
+}
+if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+initTheme();
+
+// Toasts
+const toastContainer = document.getElementById('toast-container');
+function toast(message) {
+  const div = document.createElement('div');
+  div.className = 'toast';
+  div.textContent = message;
+  toastContainer.appendChild(div);
+  setTimeout(() => div.remove(), 3000);
+}
+
 // Chat
 const chatLog = document.getElementById('chat-log');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 let chatHistory = [{ role: 'system', content: 'You are a helpful assistant.' }];
+const typingEl = document.getElementById('chat-typing');
 
 function addChat(role, content) {
   const div = document.createElement('div');
@@ -26,14 +57,24 @@ chatForm.addEventListener('submit', async (e) => {
   chatInput.value = '';
   addChat('user', text);
   chatHistory.push({ role: 'user', content: text });
-  const res = await fetch(api.chat, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: chatHistory }),
-  });
-  const data = await res.json();
-  addChat('assistant', data.reply);
-  chatHistory.push({ role: 'assistant', content: data.reply });
+  try {
+    chatForm.querySelector('button[type="submit"]').disabled = true;
+    typingEl.classList.remove('hidden');
+    const res = await fetch(api.chat, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory }),
+    });
+    if (!res.ok) throw new Error('Failed to fetch reply');
+    const data = await res.json();
+    addChat('assistant', data.reply);
+    chatHistory.push({ role: 'assistant', content: data.reply });
+  } catch (err) {
+    addChat('assistant', 'Sorry, I ran into a problem.');
+  } finally {
+    typingEl.classList.add('hidden');
+    chatForm.querySelector('button[type="submit"]').disabled = false;
+  }
 });
 
 // Todos
@@ -41,11 +82,17 @@ const todoForm = document.getElementById('todo-form');
 const todoTitle = document.getElementById('todo-title');
 const todoDue = document.getElementById('todo-due');
 const todoList = document.getElementById('todo-list');
+const todoEmpty = document.getElementById('todo-empty');
 
 async function loadTodos() {
   const res = await fetch(api.todos);
   const data = await res.json();
   todoList.innerHTML = '';
+  if (!data.length) {
+    todoEmpty.classList.remove('hidden');
+  } else {
+    todoEmpty.classList.add('hidden');
+  }
   data.forEach((t) => {
     const li = document.createElement('li');
     const cb = document.createElement('input');
@@ -58,6 +105,7 @@ async function loadTodos() {
         body: JSON.stringify({ completed: cb.checked }),
       });
       loadTodos();
+      toast(cb.checked ? 'Todo completed' : 'Todo updated');
     });
     const span = document.createElement('span');
     span.className = 'flex';
@@ -70,6 +118,7 @@ async function loadTodos() {
     del.addEventListener('click', async () => {
       await fetch(`${api.todos}/${t.id}`, { method: 'DELETE' });
       loadTodos();
+      toast('Todo deleted');
     });
     li.append(cb, span, meta, del);
     todoList.appendChild(li);
@@ -88,6 +137,7 @@ todoForm.addEventListener('submit', async (e) => {
   todoTitle.value = '';
   todoDue.value = '';
   loadTodos();
+  toast('Todo added');
 });
 
 // Reminders
@@ -96,11 +146,18 @@ const reminderText = document.getElementById('reminder-text');
 const reminderDue = document.getElementById('reminder-due');
 const reminderList = document.getElementById('reminder-list');
 const notifList = document.getElementById('notification-list');
+const reminderEmpty = document.getElementById('reminder-empty');
+const notifEmpty = document.getElementById('notification-empty');
 
 async function loadReminders() {
   const res = await fetch(api.reminders);
   const data = await res.json();
   reminderList.innerHTML = '';
+  if (!data.length) {
+    reminderEmpty.classList.remove('hidden');
+  } else {
+    reminderEmpty.classList.add('hidden');
+  }
   data.forEach((r) => {
     const li = document.createElement('li');
     const span = document.createElement('span');
@@ -114,6 +171,7 @@ async function loadReminders() {
     del.addEventListener('click', async () => {
       await fetch(`${api.reminders}/${r.id}`, { method: 'DELETE' });
       loadReminders();
+      toast('Reminder deleted');
     });
     li.append(span, meta, del);
     reminderList.appendChild(li);
@@ -124,6 +182,11 @@ async function loadNotifications() {
   const res = await fetch(api.notifications);
   const data = await res.json();
   notifList.innerHTML = '';
+  if (!data.length) {
+    notifEmpty.classList.remove('hidden');
+  } else {
+    notifEmpty.classList.add('hidden');
+  }
   data.forEach((n) => {
     const li = document.createElement('li');
     li.textContent = `${new Date(n.fired_at).toLocaleTimeString()}: ${n.text}`;
@@ -144,6 +207,7 @@ reminderForm.addEventListener('submit', async (e) => {
   reminderText.value = '';
   reminderDue.value = '';
   loadReminders();
+  toast('Reminder scheduled');
 });
 
 function refreshAll() {
@@ -154,4 +218,3 @@ function refreshAll() {
 
 refreshAll();
 setInterval(loadNotifications, 5000);
-
